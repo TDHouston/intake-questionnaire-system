@@ -17,6 +17,7 @@ public class Question {
     private Long id;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String questionText;
 
     public Question() {

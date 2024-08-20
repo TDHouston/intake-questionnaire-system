@@ -7,12 +7,11 @@ import com.example.back_end.Repository.QuestionRepository;
 import com.example.back_end.Repository.QuestionnaireJunctionRepository;
 import com.example.back_end.Repository.QuestionnaireRepository;
 import com.opencsv.CSVReader;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStreamReader;
-import java.util.List;
 
 @Service
 public class CsvLoaderService {
@@ -26,25 +25,38 @@ public class CsvLoaderService {
     @Autowired
     private QuestionnaireJunctionRepository junctionRepository;
 
-    public void loadQuestions(MultipartFile file) {
-        try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
+    @PostConstruct
+    public void loadData() {
+        loadQuestions();
+        loadQuestionnaires();
+        loadQuestionnaireJunctions();
+    }
+
+    public void loadQuestions() {
+        try (CSVReader csvReader = new CSVReader(new InputStreamReader(this.getClass().getResourceAsStream("/csv/questionnaire_questions.csv")))) {
             String[] values;
+            csvReader.readNext();
+
             while ((values = csvReader.readNext()) != null) {
                 Long id = Long.parseLong(values[0]);
                 String questionText = values[1];
 
                 Question question = new Question(questionText);
-                question.setId(id); // Set the ID manually if not auto-generated
+                question.setId(id);
                 questionRepository.save(question);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void loadQuestionnaires(MultipartFile file) {
-        try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
+
+    public void loadQuestionnaires() {
+        try (CSVReader csvReader = new CSVReader(new InputStreamReader(this.getClass().getResourceAsStream("/csv/questionnaire_questionnaires.csv")))) {
             String[] values;
+            csvReader.readNext();
+
             while ((values = csvReader.readNext()) != null) {
                 Long id = Long.parseLong(values[0]);
                 String name = values[1];
@@ -58,9 +70,11 @@ public class CsvLoaderService {
         }
     }
 
-    public void loadQuestionnaireJunctions(MultipartFile file) {
-        try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
+    public void loadQuestionnaireJunctions() {
+        try (CSVReader csvReader = new CSVReader(new InputStreamReader(this.getClass().getResourceAsStream("/csv/questionnaire_junction.csv")))) {
             String[] values;
+            csvReader.readNext();
+
             while ((values = csvReader.readNext()) != null) {
                 Long id = Long.parseLong(values[0]);
                 Long questionId = Long.parseLong(values[1]);
@@ -70,9 +84,14 @@ public class CsvLoaderService {
                 Questionnaire questionnaire = questionnaireRepository.findById(questionnaireId).orElseThrow();
                 Question question = questionRepository.findById(questionId).orElseThrow();
 
-                QuestionnaireJunction junction = new QuestionnaireJunction(questionnaire, question, priority);
-                junction.setId(id); // Set the ID manually if not auto-generated
-                junctionRepository.save(junction);
+                if (questionnaire != null && question != null) {
+                    QuestionnaireJunction junction = new QuestionnaireJunction(questionnaire, question, priority);
+                    junction.setId(id); // Set the ID manually if not auto-generated
+                    junctionRepository.save(junction);
+                } else {
+                    // Log or handle the case where either the questionnaire or question is missing
+                    System.out.println("Missing questionnaire or question for junction ID: " + id);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
