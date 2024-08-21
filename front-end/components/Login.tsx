@@ -18,7 +18,7 @@ const Login = () => {
   };
 
   return (
-    <section className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-500">
+    <section className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
       <form
         className="max-w-sm mx-auto dark:bg-gray-700 bg-white p-6 rounded shadow-md"
         onSubmit={handleLogin}
