@@ -1,15 +1,13 @@
 package com.example.back_end.Model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 @Entity
-public class Answers {
+public class Answer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,6 +22,7 @@ public class Answers {
     @Column(name = "question_id", nullable = false)
     private Integer questionId;
 
+    @ElementCollection
     @Column(name = "answer", nullable = false)
-    private String answer;
+    private List<String> answer;
 }

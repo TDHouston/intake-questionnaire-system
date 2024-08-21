@@ -1,22 +1,32 @@
 "use client";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 const QuestionsPage = () => {
   const { id } = useParams();
+  const router = useRouter();
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
 
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const res = await fetch(
+        const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/questions/${id}`
         );
-        const data = await res.json();
-        console.log("Fetched data:", data);
+        const data = await response.json();
 
         setQuestions(data);
+
+        const initialAnswers = {};
+        data.forEach((question) => {
+          const parsedQuestionText = JSON.parse(question.questionText);
+
+          if (parsedQuestionText.answer) {
+            initialAnswers[question.id] = parsedQuestionText.answer;
+          }
+        });
+        setAnswers(initialAnswers);
       } catch (error) {
         console.error("Failed to fetch questions:", error);
       }
@@ -31,7 +41,45 @@ const QuestionsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted answers:", answers);
+
+    if (Object.keys(answers).length !== questions.length) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+
+    console.log("Answers to be submitted:", answers);
+
+    const payload = {
+      questionnaireId: id,
+      answers,
+    };
+
+    console.log("Payload being sent:", payload);
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/answers`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        console.log("Answers submitted successfully");
+        alert("Thank you! Your answers have been submitted.");
+        router.push("/questionnaires");
+      } else {
+        console.error("Failed to submit answers", await response.text());
+        alert("Failed to submit answers. Please try again.");
+      }
+    } catch (error) {
+      console.error("An error occurred while submitting answers:", error);
+      alert("An error occurred. Please try again later.");
+    }
   };
 
   return (
@@ -60,17 +108,13 @@ const QuestionsPage = () => {
                     <input
                       type="checkbox"
                       value={option}
+                      checked={answers[question.id]?.includes(option) || false}
                       onChange={(e) =>
                         handleInputChange(
-                          question.questionText,
+                          question.id,
                           e.target.checked
-                            ? [
-                                ...(answers[question.questionText] || []),
-                                option,
-                              ]
-                            : answers[question.questionText].filter(
-                                (o) => o !== option
-                              )
+                            ? [...(answers[question.id] || []), option]
+                            : answers[question.id].filter((o) => o !== option)
                         )
                       }
                     />
@@ -80,9 +124,9 @@ const QuestionsPage = () => {
               ) : parsedQuestionText && parsedQuestionText.type === "input" ? (
                 <input
                   type="text"
-                  value={answers[question.questionText] || ""}
+                  value={answers[question.id] || ""}
                   onChange={(e) =>
-                    handleInputChange(question.questionText, e.target.value)
+                    handleInputChange(question.id, e.target.value)
                   }
                   className="w-full p-2 border rounded"
                 />
