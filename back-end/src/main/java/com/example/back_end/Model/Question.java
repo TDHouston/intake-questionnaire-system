@@ -1,11 +1,9 @@
 package com.example.back_end.Model;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 
 @Getter
 @Setter
